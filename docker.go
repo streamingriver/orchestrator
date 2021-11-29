@@ -2,16 +2,39 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"io"
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"gitlab.com/avarf/getenvs"
 )
+
+func auth(ctx context.Context) string {
+	authStr := ""
+	if getenvs.GetEnvString("GITHUB_USERNAME", "") != "" && getenvs.GetEnvString("GITHUB_PASSWORD", "") != "" {
+
+		authConfig := types.AuthConfig{
+			Username: getenvs.GetEnvString("GITHUB_USERNAME", ""),
+			Password: getenvs.GetEnvString("GITHUB_PASSWORD", ""),
+		}
+		encodedJSON, err := json.Marshal(authConfig)
+		if err != nil {
+			panic(err)
+		}
+		authStr = base64.URLEncoding.EncodeToString(encodedJSON)
+	}
+
+	return authStr
+	// out, err := cli.ImagePull(ctx, "alpine", types.ImagePullOptions{RegistryAuth: authStr})
+}
 
 func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, cmd []string) error {
 
@@ -39,23 +62,20 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 		portsMapping[containerPort] = append(portsMapping[containerPort], hostBinding)
 	}
 
-	// portBinding := nat.PortMap{containerPort: []nat.PortBinding{hostBinding}}
-
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return (err)
 	}
 
-	reader, err := cli.ImagePull(ctx, image_url, types.ImagePullOptions{})
+	reader, err := cli.ImagePull(ctx, image_url, types.ImagePullOptions{RegistryAuth: auth(ctx)})
 	if err != nil {
 		return (err)
 	}
 	io.Copy(io.Discard, reader)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: image_url,
-		Cmd:   cmd,
-		// ExposedPorts: portsMapping,
+		Image:  image_url,
+		Cmd:    cmd,
 		Env:    env,
 		Labels: labels,
 	}, &container.HostConfig{
@@ -77,16 +97,9 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 			return (err)
 		}
 	case <-statusCh:
+	default:
 	}
 
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		return (err)
-	}
-	defer out.Close()
-
-	// stdcopy.StdCopy(os.Stdout, os.Stderr, out)
-	io.Copy(io.Discard, out)
 	return nil
 }
 
@@ -95,6 +108,8 @@ func delete(ctx context.Context, name string) error {
 	if err != nil {
 		return err
 	}
+	dur, _ := time.ParseDuration("3s")
+	cli.ContainerStop(ctx, name, &dur)
 	if err := cli.ContainerRemove(ctx, name, types.ContainerRemoveOptions{}); err != nil {
 		return err
 	}
