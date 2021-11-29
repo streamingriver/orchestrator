@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"reflect"
 	"sort"
 	"strings"
@@ -29,12 +30,9 @@ func Equals(a, b []string) bool {
 	sort.Strings(n)
 	sort.Strings(b)
 
-	// found := false
-	// for k, v := range n {
-	// 	if !eq(v, b[k]) {
-	// 		found = true
-	// 	}
-	// }
-
 	return reflect.DeepEqual(n, b)
+}
+
+func encode(in string) string {
+	return base64.StdEncoding.EncodeToString([]byte(in))
 }

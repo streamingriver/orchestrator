@@ -14,29 +14,26 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"gitlab.com/avarf/getenvs"
 )
 
-func auth(ctx context.Context) string {
+func auth(ctx context.Context, username, password string) string {
 	authStr := ""
-	if getenvs.GetEnvString("GITHUB_USERNAME", "") != "" && getenvs.GetEnvString("GITHUB_PASSWORD", "") != "" {
 
-		authConfig := types.AuthConfig{
-			Username: getenvs.GetEnvString("GITHUB_USERNAME", ""),
-			Password: getenvs.GetEnvString("GITHUB_PASSWORD", ""),
-		}
-		encodedJSON, err := json.Marshal(authConfig)
-		if err != nil {
-			panic(err)
-		}
-		authStr = base64.URLEncoding.EncodeToString(encodedJSON)
+	authConfig := types.AuthConfig{
+		Username: username,
+		Password: password,
 	}
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		panic(err)
+	}
+	authStr = base64.URLEncoding.EncodeToString(encodedJSON)
 
 	return authStr
 	// out, err := cli.ImagePull(ctx, "alpine", types.ImagePullOptions{RegistryAuth: authStr})
 }
 
-func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, cmd []string) error {
+func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, cmd []string, username, password string) error {
 
 	portsMapping := make(nat.PortMap)
 	for hostas, vm := range ports {
@@ -67,7 +64,7 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 		return (err)
 	}
 
-	reader, err := cli.ImagePull(ctx, image_url, types.ImagePullOptions{RegistryAuth: auth(ctx)})
+	reader, err := cli.ImagePull(ctx, image_url, types.ImagePullOptions{RegistryAuth: auth(ctx, username, password)})
 	if err != nil {
 		return (err)
 	}
