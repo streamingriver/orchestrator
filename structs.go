@@ -25,11 +25,11 @@ func TestEventCreated(name, image string) *EventCreated {
 	ec.Name = name
 	ec.Image = image
 	ec.Env = []string{"HELLO=WORLD"}
-	ec.Ports = map[string]string{"8080": "8080"}
-	ec.Cmd = []string{"echo", "hello from piace of shit"}
+	ec.Ports = map[string]string{"127.0.0.1:8080": "8080/udp"}
+	ec.Cmd = []string{"echo", "hello from other side"}
 	ec.Auth.Username = "user"
 	ec.Auth.Password = "password"
-	ec.ServiceConfig = fmt.Sprintf("set-config %s", "http://url")
+	ec.ServiceConfig = fmt.Sprintf("set-config %s", "[base64encoded_data]")
 
 	b, _ := json.MarshalIndent(ec, "", " ")
 	fmt.Printf("%s\n", b)

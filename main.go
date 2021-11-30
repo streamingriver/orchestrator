@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"runtime"
 
 	"github.com/streamingriver/vitamins/apiserver"
@@ -46,6 +49,13 @@ func main() {
 		log.Printf("equals: %v", equals)
 		if equals {
 			// TODO: api call
+			if ec.ServiceConfig != "" {
+				buff := bytes.NewBuffer(nil)
+				buff.Write([]byte("set-config"))
+				buff.Write([]byte(" "))
+				buff.Write([]byte(ec.ServiceConfig))
+				http.DefaultClient.Post(fmt.Sprintf("http://%s:3080", ec.Name), "text/plain", buff)
+			}
 			log.Printf("container doesnt changed - nothing todo but,  maybe ping service API?")
 			log.Printf("Calling api: http://%s:3080 with data: (%s)", ec.Name, encode(ec.ServiceConfig))
 			return
