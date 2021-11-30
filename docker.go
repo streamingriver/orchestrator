@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -33,7 +34,7 @@ func auth(ctx context.Context, username, password string) string {
 	// out, err := cli.ImagePull(ctx, "alpine", types.ImagePullOptions{RegistryAuth: authStr})
 }
 
-func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, cmd []string, username, password string) error {
+func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, volumes map[string]string, cmd []string, username, password string) error {
 
 	portsMapping := make(nat.PortMap)
 	for hostas, vm := range ports {
@@ -70,6 +71,16 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 	}
 	io.Copy(io.Discard, reader)
 
+	mounts := []mount.Mount{}
+
+	for src, dst := range volumes {
+		mounts = append(mounts, mount.Mount{
+			Type:   "volume",
+			Source: src,
+			Target: dst,
+		})
+	}
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image:  image_url,
 		Cmd:    cmd,
@@ -77,6 +88,8 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 		Labels: labels,
 	}, &container.HostConfig{
 		PortBindings: portsMapping,
+		Mounts:       mounts,
+		ExtraHosts:   []string{"gateway:host-gateway"},
 	}, nil, nil, name)
 	if err != nil {
 		return (err)
