@@ -6,13 +6,15 @@ import (
 )
 
 type EventCreated struct {
-	Name   string            `json:"name"`
-	Image  string            `json:"image"`
-	Ports  map[string]string `json:"ports,omitempty"`
-	Env    []string          `json:"env,omitempty"`
-	Labels map[string]string `json:"labels,omitempty"`
-	Cmd    []string          `json:"cmd,omitempty"`
-	Auth   struct {
+	Name    string            `json:"name"`
+	Image   string            `json:"image"`
+	Ports   map[string]string `json:"ports,omitempty"`
+	Env     []string          `json:"env,omitempty"`
+	Labels  map[string]string `json:"labels,omitempty"`
+	Volumes map[string]string `json:"volumes,omitempty"`
+	Binds   map[string]string `json:"binds,omitempty"`
+	Cmd     []string          `json:"cmd,omitempty"`
+	Auth    struct {
 		Username string `json:"username,omitempty"`
 		Password string `json:"password,omitempty"`
 	} `json:"auth"`

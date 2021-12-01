@@ -72,9 +72,16 @@ func create(ctx context.Context, eec EventCreated, volumes map[string]string) er
 
 	mounts := []mount.Mount{}
 
-	for src, dst := range volumes {
+	for src, dst := range eec.Volumes {
 		mounts = append(mounts, mount.Mount{
 			Type:   "volume",
+			Source: src,
+			Target: dst,
+		})
+	}
+	for src, dst := range eec.Binds {
+		mounts = append(mounts, mount.Mount{
+			Type:   "bind",
 			Source: src,
 			Target: dst,
 		})
