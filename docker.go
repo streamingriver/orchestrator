@@ -31,13 +31,12 @@ func auth(ctx context.Context, username, password string) string {
 	authStr = base64.URLEncoding.EncodeToString(encodedJSON)
 
 	return authStr
-	// out, err := cli.ImagePull(ctx, "alpine", types.ImagePullOptions{RegistryAuth: authStr})
 }
 
-func create(ctx context.Context, name, image_url string, ports map[string]string, env []string, labels map[string]string, volumes map[string]string, cmd []string, username, password string) error {
+func create(ctx context.Context, eec EventCreated, volumes map[string]string) error {
 
 	portsMapping := make(nat.PortMap)
-	for hostas, vm := range ports {
+	for hostas, vm := range eec.Ports {
 		host, port, err := net.SplitHostPort(hostas)
 		hostBinding := nat.PortBinding{}
 		if err == nil {
@@ -65,7 +64,7 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 		return (err)
 	}
 
-	reader, err := cli.ImagePull(ctx, image_url, types.ImagePullOptions{RegistryAuth: auth(ctx, username, password)})
+	reader, err := cli.ImagePull(ctx, eec.Image, types.ImagePullOptions{RegistryAuth: auth(ctx, eec.Auth.Username, eec.Auth.Password)})
 	if err != nil {
 		return (err)
 	}
@@ -82,15 +81,15 @@ func create(ctx context.Context, name, image_url string, ports map[string]string
 	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image:  image_url,
-		Cmd:    cmd,
-		Env:    env,
-		Labels: labels,
+		Image:  eec.Image,
+		Cmd:    eec.Cmd,
+		Env:    eec.Env,
+		Labels: eec.Labels,
 	}, &container.HostConfig{
 		PortBindings: portsMapping,
 		Mounts:       mounts,
 		ExtraHosts:   []string{"gateway:host-gateway"},
-	}, nil, nil, name)
+	}, nil, nil, eec.Name)
 	if err != nil {
 		return (err)
 	}

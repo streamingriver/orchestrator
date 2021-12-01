@@ -63,16 +63,9 @@ func main() {
 		log.Printf("Creating container: %s", ec.Name)
 
 		err = create(
-			ctx,                                 // context
-			ec.Name,                             // container name
-			ec.Image,                            // image url
-			ec.Ports,                            // ports mapping
-			ec.Env,                              // environment variables
-			ec.Labels,                           // labels
+			ctx, // context
+			ec,
 			map[string]string{ec.Name: "/data"}, // mounts
-			ec.Cmd,                              // command if needed
-			ec.Auth.Username,                    // username if needed
-			ec.Auth.Password,                    // password if needed
 		)
 		if err != nil {
 			log.Printf("%v", err)
